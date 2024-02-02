@@ -1,0 +1,7 @@
+__pycache__
+__pycache__/
+.vscode
+dataset_test
+dataset_training
+dataset_train
+other_dataset

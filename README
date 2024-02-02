@@ -1,0 +1,12 @@
+# μ-NET
+
+μ-NET is a PyTorch framework for semantic segmentation of μ-CT images.
+
+## Installation
+conda env create -f requirements.yaml
+
+# Activate the environment
+conda activate mu-net
+
+## Examples
+To see how the framework works, you can run the two example files provided in the `examples` folder. One is a Python script and the other is a Jupyter notebook. They show different ways of using μ-NET.
