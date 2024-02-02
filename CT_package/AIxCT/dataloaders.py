@@ -46,11 +46,14 @@ class DataLoaderSegmentation_gray(torch.utils.data.dataset.Dataset):
             label_path = self.label_files[index]
             img = Image.open(img_path)
             label = Image.open(label_path)
+
+            if np.asarray(img).dtype == np.uint16:
+                img_np = np.copy(img)
+                img = img_np.astype(np.float32)/65535
+
             # Concatenate image and label, to apply same transformation on both
             img_to_tensor = transforms.ToTensor()
             image_tensor = img_to_tensor(img)
-            if image_tensor.dtype == torch.int16:
-                    image_tensor = image_tensor.float()/65535
                         
             label_tensor = img_to_tensor(label)
             image_and_label_tensor = torch.stack([image_tensor, label_tensor])

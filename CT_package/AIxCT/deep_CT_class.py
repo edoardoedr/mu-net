@@ -338,7 +338,7 @@ class deep_CT:
 
         if axis == "XY":
             for x in range(zeta):
-                imm_estratta = Image.fromarray(stack_topredict[:, :, x])
+                imm_estratta = stack_topredict[:, :, x]
                 image = unfold_image(imm_estratta, self.parameters["tiles"])
                 image = image.to(self.device)
                 outputs = model(image)
@@ -350,7 +350,7 @@ class deep_CT:
 
         elif axis == "XZ":
             for x in range(rig):
-                imm_estratta = Image.fromarray(stack_topredict[x, :, :])
+                imm_estratta = stack_topredict[x, :, :]
                 image = unfold_image(imm_estratta, self.parameters["tiles"])
                 image = image.to(self.device)
                 outputs = model(image)
@@ -362,7 +362,7 @@ class deep_CT:
 
         elif axis == "YZ":
             for x in range(col):
-                imm_estratta = Image.fromarray(stack_topredict[:, x, :])
+                imm_estratta = stack_topredict[:, x, :]
                 image = unfold_image(imm_estratta, self.parameters["tiles"])
                 image = image.to(self.device)
                 outputs = model(image)

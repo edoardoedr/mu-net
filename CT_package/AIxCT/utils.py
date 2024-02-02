@@ -91,11 +91,13 @@ def return_output_dir(directory_principale, nome ):
     return percorso_cartella
 
 def unfold_image(image, tiles_dim):
+
+    if image.dtype == np.uint16:
+        img_np = np.copy(image)
+        image = img_np.astype(np.float32)/65535
+
     image = transforms.ToTensor()(image)
     image = image.unsqueeze(0)
-
-    if image.dtype == torch.int16:
-        image = image.float()/65535
 
     H, W = image.shape[-2:]
 
