@@ -5,3 +5,5 @@ dataset_test
 dataset_training
 dataset_train
 other_dataset
+training_goldfish.ipynb
+training_goldfish.py
