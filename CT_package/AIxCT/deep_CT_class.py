@@ -85,6 +85,17 @@ class deep_CT:
         dataloaders_dict = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size = self.parameters["batch_size"], shuffle=True, num_workers=0) for x in ['train', 'val']}
         
         return dataloaders_dict
+    
+    def train_dataset(self, subprocess = False):
+
+        if subprocess == True:
+            set_start_method('spawn', force=True)
+            train = Process(target=self.main_training)
+            train.start()
+            train.join()
+        else:
+            self.main_training()
+
 
     def main_training(self):
         # Initialize model --- QUI PUOI CAMBIARE IL TIPO DI RETE DA USARE
@@ -334,41 +345,40 @@ class deep_CT:
         col = stack_topredict.shape[1]
         zeta = stack_topredict.shape[2]
         stack_inference = np.empty([rig, col, zeta], dtype=np.uint8)
-        transforms_image = transforms.ToTensor()
 
         if axis == "XY":
             for x in range(zeta):
                 imm_estratta = stack_topredict[:, :, x]
-                image = unfold_image(imm_estratta, self.parameters["tiles"], patches = False)
+                image = unfold_image(imm_estratta, self.parameters["tiles"], patches = True)
                 image = image.to(self.device)
                 outputs = model(image)
                 _, preds = torch.max(outputs, 1)
                 preds = preds.to("cpu")
-                #preds = fold_image(preds, rig, col, self.parameters["tiles"])
+                preds = fold_image(preds, rig, col, self.parameters["tiles"])
                 labels = preds.squeeze(0).cpu().numpy().astype(np.uint8)
                 stack_inference[:, :, x] = np.copy(labels)
 
         elif axis == "XZ":
             for x in range(rig):
                 imm_estratta = stack_topredict[x, :, :]
-                image = unfold_image(imm_estratta, self.parameters["tiles"], patches = False)
+                image = unfold_image(imm_estratta, self.parameters["tiles"], patches = True)
                 image = image.to(self.device)
                 outputs = model(image)
                 _, preds = torch.max(outputs, 1)
                 preds = preds.to("cpu")
-                #preds = fold_image(preds, col, zeta, self.parameters["tiles"])
+                preds = fold_image(preds, col, zeta, self.parameters["tiles"])
                 labels = preds.squeeze(0).cpu().numpy().astype(np.uint8)
                 stack_inference[x, :, :] = np.copy(labels)
 
         elif axis == "YZ":
             for x in range(col):
                 imm_estratta = stack_topredict[:, x, :]
-                image = unfold_image(imm_estratta, self.parameters["tiles"], patches = False)
+                image = unfold_image(imm_estratta, self.parameters["tiles"], patches = True)
                 image = image.to(self.device)
                 outputs = model(image)
                 _, preds = torch.max(outputs, 1)
                 preds = preds.to("cpu")
-                #preds = fold_image(preds, rig, zeta, self.parameters["tiles"])
+                preds = fold_image(preds, rig, zeta, self.parameters["tiles"])
                 labels = preds.squeeze(0).cpu().numpy().astype(np.uint8)
                 stack_inference[:, x, :] = np.copy(labels)
 
@@ -376,8 +386,6 @@ class deep_CT:
         finish_time = time.perf_counter()
         print("Immagini predette in {} seconds".format(finish_time - start_time))
         print("---")
-        torch.cuda.reset_peak_memory_stats(device=0)
-        torch.cuda.reset_max_memory_allocated(device=1)
         torch.cuda.empty_cache()
         torch.cuda.synchronize()
 

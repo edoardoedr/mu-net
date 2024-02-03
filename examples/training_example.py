@@ -12,7 +12,7 @@ if __name__ == "__main__":
     parametri = {"network" : "SEGNET", "tiles": 400, "batch_size":32, "numero_classi":4, "retrain":"", "num_epochs":150}
     training = deep_CT(dataset_train, parametri)
     dataset_train.print_info()
-    training.main_training()
+    training.train_dataset()
     training.save_info()
 
     dataset_test = CT_dataset("/../dataset_test/", step = 1)

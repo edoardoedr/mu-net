@@ -4,3 +4,5 @@ __pycache__/
 dataset_test
 dataset_training
 dataset_train
+training_goldfish.ipynb
+training_goldfish.py
