@@ -420,20 +420,20 @@ class CT_stack:
             self.np_stack[(self.np_stack > valori[0]) and (self.np_stack < valori[2])] = substitute
         return CT_stack(self.np_stack, self.voxel_size, self.tipology, self.name)
 
-    def convert(self, type):
-        if type == "8bit":
+    def convert(self, stack_type):
+        if stack_type == "8bit":
             stack_8bit = np.copy(self.np_stack).astype(np.float32)
             stack_8bit[stack_8bit < 0] = 0
             stack_8bit = (stack_8bit/stack_8bit.max())*255
             stack_8bit = np.round(stack_8bit).astype(np.uint8)
             return CT_stack(stack_8bit, self.voxel_size, self.tipology, self.name)
-        elif type == "16bit":
+        elif stack_type == "16bit":
             stack_16bit = np.copy(self.np_stack).astype(np.float32)
             stack_16bit[stack_16bit < 0] = 0
             stack_16bit = (stack_16bit/stack_16bit.max())*255
             stack_16bit = np.round(stack_16bit).astype(np.uint16)
             return CT_stack(stack_16bit, self.voxel_size, self.tipology, self.name)
-        elif type == "normalize":
+        elif stack_type == "normalize":
             stack_01 = np.copy(self.np_stack).astype(np.float32)
             stack_01[stack_01 < 0] = 0
             stack_01 = stack_01/stack_01.max()

@@ -90,7 +90,7 @@ def return_output_dir(directory_principale, nome ):
     
     return percorso_cartella
 
-def unfold_image(image, tiles_dim):
+def unfold_image(image, tiles_dim, patches = True):
 
     if image.dtype == np.uint16:
         img_np = np.copy(image)
@@ -99,22 +99,25 @@ def unfold_image(image, tiles_dim):
     image = transforms.ToTensor()(image)
     image = image.unsqueeze(0)
 
-    H, W = image.shape[-2:]
+    if patches == True:
 
+        H, W = image.shape[-2:]
+        n_H = (H + tiles_dim - 1) // tiles_dim
+        n_W = (W + tiles_dim - 1) // tiles_dim
 
-    n_H = (H + tiles_dim - 1) // tiles_dim
-    n_W = (W + tiles_dim - 1) // tiles_dim
+        pad_H = (tiles_dim - H % tiles_dim) % tiles_dim
+        pad_W = (tiles_dim - W % tiles_dim) % tiles_dim
 
-    pad_H = (tiles_dim - H % tiles_dim) % tiles_dim
-    pad_W = (tiles_dim - W % tiles_dim) % tiles_dim
+        image = F.pad(image, (0, pad_W, 0, pad_H), value=0)
 
-    image = F.pad(image, (0, pad_W, 0, pad_H), value=0)
+        # Scompongo l'immagine in immagini di dimensione [1,1,k,k] usando la funzione unfold
+        img_unfold = image.unfold(-2, tiles_dim, tiles_dim).unfold(-2, tiles_dim, tiles_dim)
 
-    # Scompongo l'immagine in immagini di dimensione [1,1,k,k] usando la funzione unfold
-    img_unfold = image.unfold(-2, tiles_dim, tiles_dim).unfold(-2, tiles_dim, tiles_dim)
+        # Trasformo le immagini scomposte in un tensore di dimensione [n_H * n_W, 1, k, k]
+        img_unfold = img_unfold.contiguous().view(-1, 1, tiles_dim, tiles_dim)
 
-    # Trasformo le immagini scomposte in un tensore di dimensione [n_H * n_W, 1, k, k]
-    img_unfold = img_unfold.contiguous().view(-1, 1, tiles_dim, tiles_dim)
+    else:
+        img_unfold = image
 
     return img_unfold
 

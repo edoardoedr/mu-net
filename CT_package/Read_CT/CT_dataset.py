@@ -329,6 +329,12 @@ class CT_dataset:
         self.images = dati_filtrati
         self.dataset_info["lista_filtri_grays"].append("unsharp")
 
+    def convert(self, stack_type):
+        dati_converiti = []
+        for dati in self.images:
+            dati_converiti.append(dati.convert(stack_type))
+        self.images = dati_converiti
+
     def sharpen(self):
         dati_filtrati = []
         for dati in self.images:

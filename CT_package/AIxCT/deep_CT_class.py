@@ -339,36 +339,36 @@ class deep_CT:
         if axis == "XY":
             for x in range(zeta):
                 imm_estratta = stack_topredict[:, :, x]
-                image = unfold_image(imm_estratta, self.parameters["tiles"])
+                image = unfold_image(imm_estratta, self.parameters["tiles"], patches = False)
                 image = image.to(self.device)
                 outputs = model(image)
                 _, preds = torch.max(outputs, 1)
                 preds = preds.to("cpu")
-                preds = fold_image(preds, rig, col, self.parameters["tiles"])
+                #preds = fold_image(preds, rig, col, self.parameters["tiles"])
                 labels = preds.squeeze(0).cpu().numpy().astype(np.uint8)
                 stack_inference[:, :, x] = np.copy(labels)
 
         elif axis == "XZ":
             for x in range(rig):
                 imm_estratta = stack_topredict[x, :, :]
-                image = unfold_image(imm_estratta, self.parameters["tiles"])
+                image = unfold_image(imm_estratta, self.parameters["tiles"], patches = False)
                 image = image.to(self.device)
                 outputs = model(image)
                 _, preds = torch.max(outputs, 1)
                 preds = preds.to("cpu")
-                preds = fold_image(preds, col, zeta, self.parameters["tiles"])
+                #preds = fold_image(preds, col, zeta, self.parameters["tiles"])
                 labels = preds.squeeze(0).cpu().numpy().astype(np.uint8)
                 stack_inference[x, :, :] = np.copy(labels)
 
         elif axis == "YZ":
             for x in range(col):
                 imm_estratta = stack_topredict[:, x, :]
-                image = unfold_image(imm_estratta, self.parameters["tiles"])
+                image = unfold_image(imm_estratta, self.parameters["tiles"], patches = False)
                 image = image.to(self.device)
                 outputs = model(image)
                 _, preds = torch.max(outputs, 1)
                 preds = preds.to("cpu")
-                preds = fold_image(preds, rig, zeta, self.parameters["tiles"])
+                #preds = fold_image(preds, rig, zeta, self.parameters["tiles"])
                 labels = preds.squeeze(0).cpu().numpy().astype(np.uint8)
                 stack_inference[:, x, :] = np.copy(labels)
 
