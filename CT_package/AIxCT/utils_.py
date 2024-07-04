@@ -8,7 +8,6 @@ import os
 from torchvision import transforms
 import torch.nn.functional as F
 import torch
-from torchvision.transforms.functional import InterpolationMode
 
 def iou2D(pred, target, n_classes = 3):
     ious = []
@@ -27,28 +26,52 @@ def iou2D(pred, target, n_classes = 3):
 
     return np.array(ious)
 
+
 def calcola_moda(array):
-    return np.apply_along_axis(lambda x: st.mode(x, axis=0)[0], axis=2, arr=array).astype(np.uint8)
+    zeta = array.shape[2]
+    rig = array.shape[0]
+    col = array.shape[1]
+    moda = np.empty(zeta, dtype=np.uint8)
+    new_array = np.empty([rig, col], dtype=np.uint8)
+
+    for r in range(rig):
+        for c in range(col):
+            moda = np.copy(array[r, c, :])
+            new_array[r, c] = np.copy(st.mode(moda))
+
+    return new_array
 
 def calcola_moda_parallelized(stacks):
     start_time = time.perf_counter()
     z = stacks[0].shape[2]
     rig = stacks[0].shape[0]
     col = stacks[0].shape[1]
+    num_stack = len(stacks)
+    pila = np.empty([rig, col, num_stack], dtype=np.uint8)
+    new_stack = np.empty([rig, col, z], dtype=np.uint8)
 
-    lista_a3 = [np.dstack([stac[:, :, x] for stac in stacks]) for x in range(z)]
+    lista_a3 = []
+
+    for x in range(0, z, 1):
+        immagini = []
+        for i in range(len(stacks)):
+            stac = stacks[i]
+            immagini.append(stac[:, :, x])
+        pila = np.dstack([immagine for immagine in immagini])
+        # print(pila.shape)
+        lista_a3.append(pila)
 
     with Pool() as pool:
         result = pool.map(calcola_moda, lista_a3)
 
-    new_stack = np.stack(result, axis=2)
+    for n in range(z):
+        new_stack[:, :, n] = np.copy(result[n])
 
     finish_time = time.perf_counter()
-    print(f"Moda calcolata in {finish_time - start_time:.2f} seconds - using multiprocessing")
+    print("Moda calcolata in {} seconds - using multiprocessing".format(finish_time - start_time))
     print("---")
 
     return new_stack
-
 
 def return_output_dir(directory_principale, nome ):
     cont = 0
@@ -123,68 +146,6 @@ def fold_image(img_unfold, H, W, tiles_dim):
     image_rc = img_recon[:, :, :H, :W]
     
     return image_rc
-
-def preprocess_SAM(image, target_length):
-    if image.dtype == np.uint16:
-        img_np = np.copy(image)
-        image = img_np.astype(np.float32)/65535
-
-    image = transforms.ToTensor()(image)
-    image = image.unsqueeze(0)
-    
-    resized_image, boxes = process_image(image, target_length)
-    
-    return resized_image, boxes
-    
-    
-def process_image(image, target_length):
-            
-    B, C, H, W = image.size()
-    boxes = torch.zeros((1,1,4))
-            
-    if C == 1:
-        image = image.repeat(1, 3, 1, 1)
-                
-    image_resized = resize_longest_side_image(image, target_length)
-    img_padded, padding = pad_image(image_resized, target_length)
-                
-    bboxes = np.array([0, 0, target_length, target_length])
-    boxes[0,0,:] = torch.tensor(bboxes, dtype=torch.int64)
-                
-    return img_padded, boxes, padding
-
-def postprocess_SAM(mask, padding, original_image):
-    
-    mask_not_pad = mask[:, :, :padding[3], :padding[1]]
-    resize = transforms.Resize((original_image.shape[0], original_image.shape[1]))
-    resized_mask = resize(mask_not_pad, interpolation = InterpolationMode.NEAREST)
-    
-    return resized_mask
-    
-
-def pad_image(images, target_length):
-    """
-    Expects a PyTorch tensor with shape [B, C, H, W].
-    """
-    B, C, h, w = images.shape
-    padh = target_length - h
-    padw = target_length - w
-    # Pad the images
-    padding = (0, padw, 0, padh)  # left, right, top, bottom
-    padded_images = F.pad(images, padding, "constant", 0)
-    return padded_images, padding
-
-def resize_longest_side_image(images, target_length):
-    """
-    Expects a PyTorch tensor with shape [B, C, H, W].
-    """
-    B, C, oldh, oldw = images.shape
-    scale = target_length * 1.0 / max(oldh, oldw)
-    newh, neww = int(oldh * scale + 0.5), int(oldw * scale + 0.5)
-    resize = transforms.Resize((newh, neww))
-    resized_images = resize(images)
-    return resized_images
-    
 
 
 class SemanticSegmentationTarget:

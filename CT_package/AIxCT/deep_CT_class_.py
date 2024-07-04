@@ -1,5 +1,5 @@
-from ..Read_CT.CT_dataset import CT_dataset
-from ..Read_CT.CT_stack_class import CT_stack
+from ..Read_CT.CT_dataset_ import CT_dataset
+from ..Read_CT.CTStack import CT_stack
 from .models.unet import UNet
 from .models.segnet import SegNet
 from .models.continual_Segnet import Continual_SegNet

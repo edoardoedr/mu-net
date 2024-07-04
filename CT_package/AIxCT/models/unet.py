@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 def double_conv(in_channels, out_channels):
     return nn.Sequential(
@@ -58,4 +59,6 @@ class UNet(nn.Module):
         
         out = self.conv_last(x)
         
-        return out
+        x_softmax = F.softmax(out, dim=1)
+        
+        return x_softmax
