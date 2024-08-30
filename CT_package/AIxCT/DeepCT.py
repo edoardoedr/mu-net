@@ -53,7 +53,7 @@ class DeepCT:
                                                x, 
                                                self.parameters["tiles"], 
                                                use_box=self.parameters["use_box"],
-                                               target_length= 226) for x in ['train', 'val']}
+                                               target_length= 256) for x in ['train', 'val']}
         else:
             image_datasets = {x: DataLoaderSegmentation_gray(os.path.join(data_dir, x), 
                                                              x, 
@@ -134,8 +134,11 @@ class DeepCT:
                     
                     if "MedSAM" in self.parameters["network"]:
                         inputs, labels, boxes = data[0].to(self.device), data[1].to(self.device), data[2].to(self.device)
+
                     else:
                         inputs, labels = data[0].to(self.device), data[1].to(self.device)
+                    if "DICE" in self.parameters["loss_function"] or "IOU" in self.parameters["loss_function"]:
+                        labels = labels.unsqueeze(1)
 
                     if inputs.shape[0] == 1:
                         self.logger("Skipping iteration because batch_size = 1\n")
@@ -147,7 +150,7 @@ class DeepCT:
                             outputs = model(inputs, boxes)
                         else:
                             outputs = model(inputs)
-                        
+
                         loss = criterion(outputs, labels)
                         _, preds = torch.max(outputs, 1)
                         if phase == 'train':
@@ -309,12 +312,12 @@ class DeepCT:
             else:
                 return SegNet(input_channels=n_channels, output_channels=self.parameters["numero_classi"], VGG=False)
         elif self.parameters["network"] == "MedSAM":
-            use_boxes = False if is_test else self.parameters["use_boxes"]
-            return MedSAM(self.parameters["numero_classi"], use_boxes)
+            use_box = False if is_test else self.parameters["use_box"]
+            return MedSAM(self.parameters["numero_classi"], use_box)
         
         elif self.parameters["network"] == "MedSAMLite":
-            use_boxes = False if is_test else self.parameters["use_boxes"]
-            return MedSAMLite(self.parameters["numero_classi"], use_boxes)
+            use_box = False if is_test else self.parameters["use_box"]
+            return MedSAMLite(self.parameters["numero_classi"], use_box)
         
     def _initialize_loss(self):
         
@@ -323,10 +326,10 @@ class DeepCT:
             return nn.CrossEntropyLoss(weight=(torch.FloatTensor(weight).to(self.device) if weight else None))
         
         elif self.parameters["loss_function"] == "DICE":
-            return DiceLoss(include_background=False, to_onehot_y=True, sigmoid=False, softmax=False, squared_pred=False, jaccard=False, reduction= 'mean')
+            return DiceLoss(include_background=True, to_onehot_y=True, sigmoid=False, softmax=False, squared_pred=False, jaccard=False, reduction= 'mean')
         
         elif self.parameters["loss_function"] == "IOU":
-            return DiceLoss(include_background=False, to_onehot_y=True, sigmoid=False, softmax=False, squared_pred=False, jaccard=True, reduction= 'mean')
+            return DiceLoss(include_background=True, to_onehot_y=True, sigmoid=False, softmax=False, squared_pred=False, jaccard=True, reduction= 'mean')
         
     def _log_params_to_learn(self, model, file_log):
         file_log.write("Params to learn:\n")

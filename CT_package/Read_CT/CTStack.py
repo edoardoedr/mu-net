@@ -64,7 +64,7 @@ class CTStack:
         
         elif os.path.isfile(data_dir):
             stack = sitk.ReadImage(data_dir)
-            stack_np = sitk.GetArrayViewFromImage(stack)
+            stack_np = sitk.GetArrayFromImage(stack)
             stack_np = np.transpose(stack_np, (1, 2, 0))
             stack_np = resample(stack_np, step)
             resolution_in = stack.GetSpacing()

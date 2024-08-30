@@ -115,27 +115,33 @@ def splitted_test(data_dir):
             folders[1] == "labels" or folders[1] == "labels_test"):
         return True
 
-
+"""
 def split_train(grayscale, label, dest_dir, name, estensione=".tif"):
     # Calcola le dimensioni del training e validation set
-    lung_tot = 0
-    i = 0
-    while lung_tot != grayscale.shape[2]:
-        len_val = int(grayscale.shape[2] * 25 / 100) - i
-        len_train = int(grayscale.shape[2] - len_val)
-        lung_tot = len_val + len_train
-        i = i + 1
+        
+    len_val = round(grayscale.shape[2] * 25 / 100)
+    len_train = grayscale.shape[2] - len_val
+    lung_tot = len_val + len_train
 
+    # Bilancia eventuali discrepanze
+    if lung_tot != grayscale.shape[2]:
+        len_val += (grayscale.shape[2] - lung_tot)
+        len_train = grayscale.shape[2] - len_val
+    
     # Genera indici casuali per la divisione
     indices = np.arange(grayscale.shape[2])
+    
+   
     train_indices, val_indices = train_test_split(indices, test_size=len_val, random_state=0)
-
+    
     # Crea gli array per training e validation set
     grayscale_train = grayscale[:, :, train_indices]
     grayscale_val = grayscale[:, :, val_indices]
     label_train = label[:, :, train_indices]
     label_val = label[:, :, val_indices]
-
+    print(grayscale_train.shape)
+    print(grayscale_val.shape)
+    
     # Salva le immagini e le etichette nei rispettivi directory
     for n in range(grayscale_train.shape[2]):
         nome = f"{name}{n:04d}"
@@ -146,6 +152,53 @@ def split_train(grayscale, label, dest_dir, name, estensione=".tif"):
         nome = f"{name}{n:04d}"
         cv2.imwrite(f"{dest_dir}val/img/{nome}{estensione}", grayscale_val[:, :, n])
         cv2.imwrite(f"{dest_dir}val/label/label_{nome}{estensione}", label_val[:, :, n])
+"""
+
+def split_train(grayscale, label, dest_dir, name, estensione=".tif", val_split=0.25):
+    """
+    Divide un dataset di immagini in set di training e validation e salva i risultati su disco.
+
+    Args:
+        grayscale (numpy.ndarray): Array 3D contenente le immagini in scala di grigi.
+        label (numpy.ndarray): Array 3D contenente le etichette corrispondenti.
+        dest_dir (str): Directory di destinazione per salvare le immagini divise.
+        name (str): Prefisso del nome dei file salvati.
+        estensione (str, optional): Estensione dei file immagine. Default: ".tif".
+        val_split (float, optional): Percentuale di immagini da destinare al validation set. Default: 0.25.
+    """
+    len_val = round(grayscale.shape[2] * 25 / 100)
+    len_train = grayscale.shape[2] - len_val
+    lung_tot = len_val + len_train
+
+    # Bilancia eventuali discrepanze
+    if lung_tot != grayscale.shape[2]:
+        len_val += (grayscale.shape[2] - lung_tot)
+        len_train = grayscale.shape[2] - len_val
+    
+    # Genera indici casuali per la divisione
+    indices = np.arange(grayscale.shape[2])
+    
+    train_indices, val_indices = train_test_split(indices, test_size=len_val, random_state=0)
+    
+    
+    # Salva le immagini e le etichette nei rispettivi directory
+    for n in train_indices:
+        nome = f"{name}{n:04d}"
+        gray_img = np.copy(grayscale[:, :, n])
+        lbl = np.copy(label[:,:,n])
+        cv2.imwrite(f"{dest_dir}train/img/{nome}{estensione}", gray_img)
+        cv2.imwrite(f"{dest_dir}train/label/label_{nome}{estensione}", lbl)
+
+
+    for n in val_indices:
+        nome = f"{name}{n:04d}"
+        gray_img = np.copy(grayscale[:, :, n])
+        lbl = np.copy(label[:,:,n])
+        cv2.imwrite(f"{dest_dir}val/img/{nome}{estensione}", gray_img)
+        cv2.imwrite(f"{dest_dir}val/label/label_{nome}{estensione}", lbl)
+
+    
+
 
 
 def determine_numpy_type(immagine):

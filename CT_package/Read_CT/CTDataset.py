@@ -321,7 +321,7 @@ class CTDataset:
         os.makedirs(os.path.join(dest_dir, "train/label"), exist_ok=True)
         os.makedirs(os.path.join(dest_dir, "val/img"), exist_ok=True)
         os.makedirs(os.path.join(dest_dir, "val/label"), exist_ok=True)
-
+        
         # Rimuove i file esistenti nelle directory di addestramento e validazione
         for subdir in ["train/img", "train/label", "val/img", "val/label"]:
             file_list = os.listdir(os.path.join(dest_dir, subdir))
@@ -333,11 +333,10 @@ class CTDataset:
         for images, labels in zip(self.images, self.labels):
             split_train(images.np_stack, labels.np_stack, dest_dir, images.name)
 
-
     def _initialize_from_directory(self, data_dir, step):
         dataset = self.upload_dataset(data_dir, step)
         self.images, self.labels = dataset
-        base_dir = os.path.dirname(data_dir.rstrip("/")) + "/"
+        base_dir = os.path.abspath(os.path.dirname(data_dir.rstrip("/"))) + "/"
         self.dataset_info.update({
             "directory_principale": base_dir,
             "directory_output": base_dir,
@@ -362,7 +361,8 @@ class CTDataset:
             self.dataset_info["modalità"] = "test_predici" if not self.labels else "test_performance"
             if self.labels:
                 assert len(self.images) == len(self.labels), "Labels must have the same length as images in test_performance dataset"
-
+        assert self.dataset_info["modalità"], "bisogna selezionare una modalità"
+        
     @staticmethod
     def upload_dataset(data_dir, step):
         files_or_folders = sorted(os.listdir(data_dir))

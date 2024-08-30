@@ -28,7 +28,7 @@ class DataLoaderSegmentation_gray(torch.utils.data.dataset.Dataset):
         else:
             self.transforms = transforms.Compose([
                     transforms.RandomVerticalFlip(),
-                    transforms.RandomRotation(),
+                    transforms.RandomRotation(35),
                     transforms.RandomCrop((self.tiles, self.tiles)),
                     #transforms.ToTensor(),
                 ])
@@ -66,7 +66,7 @@ class DataLoaderSegmentation_gray(torch.utils.data.dataset.Dataset):
         return len(self.img_files)
     
 class DataLoaderSAM(torch.utils.data.dataset.Dataset):
-    def __init__(self, folder_path, mode, tiles = 226, use_box = False, target_length = 226):
+    def __init__(self, folder_path, mode, tiles = 256, use_box = False, target_length = 256):
         super(DataLoaderSAM, self).__init__()
         self.img_files = glob.glob(os.path.join(folder_path,'img','*.*'))
         self.label_files = []
@@ -81,17 +81,20 @@ class DataLoaderSAM(torch.utils.data.dataset.Dataset):
             self.label_files.append(os.path.join(folder_path, 'label', label_filename_with_ext))
 
         if "val" == mode :
-            self.transforms = transforms.Compose([
-                transforms.CenterCrop((self.tiles, self.tiles)),
-                #transforms.ToTensor(),
-            ])
+            self.transforms_list = []
+            if self.tiles is not None:
+                self.transforms_list.append(transforms.CenterCrop((self.tiles, self.tiles)))
+            self.transforms = transforms.Compose(self.transforms_list)
         else:
-            self.transforms = transforms.Compose([
-                    transforms.RandomVerticalFlip(),
-                    transforms.RandomRotation(),
-                    transforms.RandomCrop((self.tiles, self.tiles)),
-                    #transforms.ToTensor(),
-                ])
+            self.transforms_list = [transforms.RandomVerticalFlip(), transforms.RandomRotation(35),]
+
+            # Controlla se self.tiles non è None
+            if self.tiles is not None:
+                self.transforms_list.append(transforms.RandomCrop((self.tiles, self.tiles)))
+
+            # Componi le trasformazioni
+            self.transforms = transforms.Compose(self.transforms_list)
+
         self.to_tensor = transforms.ToTensor()
 
     def __getitem__(self, index):
@@ -139,26 +142,31 @@ class DataLoaderSAM(torch.utils.data.dataset.Dataset):
         img_padded = self._pad_image(image_resized)
         mask_padded = self._pad_mask(mask_resized)
                 
-        if not self.use_boxes:
+        if not self.use_box:
             bboxes = np.array([0, 0, self.target_length, self.target_length])
-            boxes = torch.tensor([bboxes], dtype=torch.int64).unsqueeze(1)
+            boxes = torch.tensor([bboxes], dtype=torch.int64)
         else:
             boxes = self._get_bounding_boxes(mask_padded)
                 
         return img_padded, mask_padded, boxes
         
-    def _get_bounding_boxes(gt2D):
+    def _get_bounding_boxes(self, gt2D):
         # Inizializza un tensore per memorizzare le coordinate delle bounding box per ogni batch
         bounding_boxes = torch.zeros((1, 4), dtype=torch.int64)
 
         y_indices, x_indices = (gt2D > 0).nonzero(as_tuple=True)
 
-        # Ottieni gli indici minimi e massimi per x e y
-        x_min, x_max = torch.min(x_indices), torch.max(x_indices)
-        y_min, y_max = torch.min(y_indices), torch.max(y_indices)
+        if x_indices.numel() > 0 and y_indices.numel() > 0:
+            # Ottieni gli indici minimi e massimi per x e y
+            x_min, x_max = torch.min(x_indices), torch.max(x_indices)
+            y_min, y_max = torch.min(y_indices), torch.max(y_indices)
 
-        # Assegna le coordinate al tensore delle bounding box
-        bounding_boxes[0, :] = torch.tensor([x_min, y_min, x_max, y_max])
+            # Assegna le coordinate al tensore delle bounding box
+            bounding_boxes[0, :] = torch.tensor([x_min, y_min, x_max, y_max])
+        else:
+            # Se non ci sono indici validi, assegna una bounding box vuota o lascia il tensore a zero
+            bboxes = np.array([0, 0, self.target_length, self.target_length])
+            boxes = torch.tensor([bboxes], dtype=torch.int64)
 
         # Restituisci il tensore delle bounding box
         return bounding_boxes
@@ -176,13 +184,13 @@ class DataLoaderSAM(torch.utils.data.dataset.Dataset):
     
     def _resize_longest_side_mask(self, masks):
         """
-        Expects a PyTorch tensor with shape [B, C, H, W].
+        Expects a PyTorch tensor with shape [B, H, W].
         """
         oldh, oldw = masks.shape
         scale = self.target_length * 1.0 / max(oldh, oldw)
         newh, neww = int(oldh * scale + 0.5), int(oldw * scale + 0.5)
         resize = transforms.Resize((newh, neww), interpolation = InterpolationMode.NEAREST)
-        resized_masks = resize(masks)
+        resized_masks = resize(masks.unsqueeze(0)).squeeze(0)
         return resized_masks
     
     def _pad_image(self, images):
@@ -206,5 +214,5 @@ class DataLoaderSAM(torch.utils.data.dataset.Dataset):
         padw = self.target_length - w
         # Pad the images
         padding = (0, padw, 0, padh)  # left, right, top, bottom
-        padded_masks = F.pad(mask, padding, "constant", 0)
+        padded_masks = F.pad(mask.unsqueeze(0), padding, "constant", 0).squeeze(0)
         return padded_masks

@@ -27,7 +27,7 @@ class MedSAM(nn.Module):
                                              mlp_ratio=4, 
                                              norm_layer=partial(torch.nn.LayerNorm, eps=1e-6), 
                                              num_heads=12, 
-                                             patch_size=self.target_length//16,
+                                             patch_size=self.target_length//64,
                                              qkv_bias=True,
                                              use_rel_pos=True,
                                              global_attn_indexes=[2, 5, 8, 11],
@@ -59,6 +59,7 @@ class MedSAM(nn.Module):
                 masks=None,
             )
             #print("sparse embeddings size", sparse_embeddings.size())
+            #print("dense embeddings size", dense_embeddings.size())
             low_res_masks, iou_predictions = self.mask_decoder(
                 image_embeddings=image_embedding, # (B, 256, 64, 64)
                 image_pe=self.prompt_encoder.get_dense_pe(), # (1, 256, 64, 64)

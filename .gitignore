@@ -6,3 +6,6 @@ dataset_training
 dataset_train
 training_goldfish.ipynb
 training_goldfish.py
+dataset
+*.pth
+*.pkl
