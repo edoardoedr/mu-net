@@ -67,7 +67,7 @@ class DataLoaderSegmentation_gray(torch.utils.data.dataset.Dataset):
     
 class DataLoaderSAM(torch.utils.data.dataset.Dataset):
     def __init__(self, folder_path, mode, tiles = 226, use_box = False, target_length = 226):
-        super(DataLoaderSegmentation_gray, self).__init__()
+        super(DataLoaderSAM, self).__init__()
         self.img_files = glob.glob(os.path.join(folder_path,'img','*.*'))
         self.label_files = []
         self.tiles = tiles

@@ -2,7 +2,6 @@
 from .modeling_SAMLite import MaskDecoder, PromptEncoder, TwoWayTransformer, TinyViT
 import torch
 from torch import nn
-from tiny_vit_sam import TinyViT
 import numpy as np
 
 

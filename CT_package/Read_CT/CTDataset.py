@@ -3,6 +3,8 @@ from .CTStack import CTStack
 from .utils import *
 import os
 import copy
+import json
+import pprint
 
 
 keys_classe = [
@@ -322,8 +324,10 @@ class CTDataset:
 
         # Rimuove i file esistenti nelle directory di addestramento e validazione
         for subdir in ["train/img", "train/label", "val/img", "val/label"]:
-            for file in os.listdir(os.path.join(dest_dir, subdir)):
-                os.remove(os.path.join(dest_dir, subdir, file))
+            file_list = os.listdir(os.path.join(dest_dir, subdir))
+            if file_list:
+                for file in file_list:
+                    os.remove(os.path.join(dest_dir, subdir, file))
 
         # Divide e salva le immagini e le etichette
         for images, labels in zip(self.images, self.labels):
