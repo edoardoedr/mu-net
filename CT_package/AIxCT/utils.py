@@ -132,9 +132,9 @@ def preprocess_SAM(image, target_length):
     image = transforms.ToTensor()(image)
     image = image.unsqueeze(0)
     
-    resized_image, boxes = process_image(image, target_length)
+    resized_image, boxes, padding = process_image(image, target_length)
     
-    return resized_image, boxes
+    return resized_image, boxes, padding
     
     
 def process_image(image, target_length):
