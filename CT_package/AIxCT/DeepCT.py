@@ -19,6 +19,8 @@ from .utils import *
 from .pytorch_grad_cam import GradCAM
 from monai.losses import DiceLoss
 from tqdm import tqdm
+import json
+import pprint
 
 keys_classe_deep = ["network", "tiles", "batch_size", "numero_classi", "retrain", "num_epochs", "use_box", "loss_function"]
 
@@ -223,8 +225,9 @@ class DeepCT:
 
         rig, col, zeta = stack_topredict.shape
         stack_inference = np.empty([rig, col, zeta], dtype=np.uint8)
+        axis_map = {"XY": zeta, "XZ": col, "YZ": rig}
 
-        for x in range(stack_topredict.shape[axis]):
+        for x in range(axis_map.get(axis, None)):
             if axis == "XY":
                 imm_estratta = stack_topredict[:, :, x]
             elif axis == "XZ":
@@ -389,3 +392,10 @@ class DeepCT:
         
         with open(os.path.join(self.dataset.dataset_info["directory_output"], 'log_file.txt'), 'a') as file_log:
             file_log.write(message + '\n')
+            
+    def save_info(self):
+        with open(self.output_dir + self.dataset.dataset_info["modalità"] + "_parameters" + ".json", "w") as file:
+            json.dump(self.parameters, file)
+
+    def print_info(self):
+        pprint.pprint(self.parameters)
